@@ -5,7 +5,7 @@
     right: 0;
     bottom: 0;
     background-color: #ef6a8a;
-    z-index: 9999999999;
+    z-index: 9999999;
 }
 
 .spinner {
@@ -23,7 +23,7 @@
     background-color: #fff;
     height: 100%;
     width: 6px;
-    display: inline;
+    display: inline-block;
     -webkit-animation: stretchdelay 1.2s infinite ease-in-out;
     animation: stretchdelay 1.2s infinite ease-in-out;
 }

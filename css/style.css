@@ -45,3 +45,10 @@ header h4 {
     font-family: 'Pacifico';
     text-align: center;
 }
+
+.swal2-title, .swal2-content{
+    color: azure !important;
+  }
+  .swal2-popup {
+    border-radius: 15px !important;
+  }
