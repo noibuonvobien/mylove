@@ -6,6 +6,7 @@ async function runSecurityReview() {
 
   console.log("Event:", process.env.GITHUB_EVENT_NAME);
   console.log("Base Ref:", process.env.GITHUB_BASE_REF);
+  console.log("API KEY exists:", !!process.env.OPENAI_API_KEY);
 
   let diff = "";
 
