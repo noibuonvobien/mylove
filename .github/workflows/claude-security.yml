@@ -15,9 +15,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Run Claude Code Security Review
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install axios
+
+      - name: Run Security Review
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: |
-          npm install -g @anthropic-ai/claude-code-security-review
-          claude-code-security-review .
+        run: node js/security-review.js
