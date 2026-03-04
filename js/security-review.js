@@ -3,11 +3,23 @@ const axios = require("axios");
 
 const apiKey = process.env.ANTHROPIC_API_KEY;
 
-// Lấy diff an toàn trong CI
-const diff = execSync("git diff HEAD^ HEAD").toString();
-
 async function runReview() {
   try {
+    let diff = "";
+
+    try {
+      diff = execSync(
+        `git diff origin/${process.env.GITHUB_BASE_REF}...HEAD`
+      ).toString();
+    } catch {
+      diff = execSync("git diff HEAD").toString();
+    }
+
+    if (!diff) {
+      console.log("No changes detected.");
+      return;
+    }
+
     const response = await axios.post(
       "https://api.anthropic.com/v1/messages",
       {
@@ -31,7 +43,6 @@ async function runReview() {
 
     console.log(response.data.content[0].text);
   } catch (error) {
-    console.error("API ERROR:");
     console.error(error.response?.data || error.message);
     process.exit(1);
   }
