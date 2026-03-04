@@ -6,7 +6,7 @@ async function runSecurityReview() {
 
   console.log("Event:", process.env.GITHUB_EVENT_NAME);
   console.log("Base Ref:", process.env.GITHUB_BASE_REF);
-  console.log("API KEY exists:", !!process.env.OPENAI_API_KEY);
+  console.log("API KEY exists:", !!process.env.ANTHROPIC_API_KEY);
 
   let diff = "";
 
@@ -33,33 +33,31 @@ async function runSecurityReview() {
 
   try {
     const response = await axios.post(
-      "https://api.openai.com/v1/chat/completions",
+      "https://api.anthropic.com/v1/messages",
       {
-        model: "gpt-4o-mini",
+        model: "claude-3-5-sonnet-latest",
+        max_tokens: 1000,
         messages: [
           {
-            role: "system",
-            content: "You are a senior security engineer."
-          },
-          {
             role: "user",
-            content: `Review this code diff for security vulnerabilities:\n\n${diff}`
+            content: `You are a senior security engineer. Review the following code diff for security vulnerabilities:\n\n${diff}`
           }
-        ],
-        temperature: 0.2
+        ]
       },
       {
         headers: {
-          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-          "Content-Type": "application/json"
+          "x-api-key": process.env.ANTHROPIC_API_KEY,
+          "anthropic-version": "2023-06-01",
+          "content-type": "application/json"
         }
       }
     );
 
     console.log("==== SECURITY REVIEW RESULT ====");
-    console.log(response.data.choices[0].message.content);
+    console.log(response.data.content[0].text);
+
   } catch (error) {
-    console.log("❌ OpenAI API Error:");
+    console.log("❌ Claude API Error:");
     if (error.response) {
       console.log(error.response.data);
     } else {
