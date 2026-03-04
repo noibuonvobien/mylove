@@ -1,51 +1,70 @@
 const { execSync } = require("child_process");
 const axios = require("axios");
 
-const apiKey = process.env.ANTHROPIC_API_KEY;
+async function runSecurityReview() {
+  console.log("==== SECURITY REVIEW START ====");
 
-async function runReview() {
+  console.log("Event:", process.env.GITHUB_EVENT_NAME);
+  console.log("Base Ref:", process.env.GITHUB_BASE_REF);
+
+  let diff = "";
+
   try {
-    let diff = "";
-
-    try {
+    if (process.env.GITHUB_EVENT_NAME === "pull_request") {
+      console.log("Running PR diff...");
       diff = execSync(
         `git diff origin/${process.env.GITHUB_BASE_REF}...HEAD`
       ).toString();
-    } catch {
-      diff = execSync("git diff HEAD").toString();
+    } else {
+      console.log("Running push diff...");
+      diff = execSync("git diff HEAD^ HEAD").toString();
     }
+  } catch (err) {
+    console.log("⚠ Could not compute diff:", err.message);
+  }
 
-    if (!diff) {
-      console.log("No changes detected.");
-      return;
-    }
+  if (!diff.trim()) {
+    console.log("No changes detected.");
+    process.exit(0);
+  }
 
+  console.log("Diff length:", diff.length);
+
+  try {
     const response = await axios.post(
-      "https://api.anthropic.com/v1/messages",
+      "https://api.openai.com/v1/chat/completions",
       {
-        model: "claude-3-5-sonnet-latest",
-        max_tokens: 1000,
+        model: "gpt-4o-mini",
         messages: [
           {
-            role: "user",
-            content: `Review the following code changes for security vulnerabilities:\n\n${diff}`,
+            role: "system",
+            content: "You are a senior security engineer."
           },
+          {
+            role: "user",
+            content: `Review this code diff for security vulnerabilities:\n\n${diff}`
+          }
         ],
+        temperature: 0.2
       },
       {
         headers: {
-          "x-api-key": apiKey,
-          "anthropic-version": "2023-06-01",
-          "content-type": "application/json",
-        },
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+          "Content-Type": "application/json"
+        }
       }
     );
 
-    console.log(response.data.content[0].text);
+    console.log("==== SECURITY REVIEW RESULT ====");
+    console.log(response.data.choices[0].message.content);
   } catch (error) {
-    console.error(error.response?.data || error.message);
-    process.exit(1);
+    console.log("❌ OpenAI API Error:");
+    if (error.response) {
+      console.log(error.response.data);
+    } else {
+      console.log(error.message);
+    }
   }
 }
 
-runReview();
+runSecurityReview();
